@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 """Writes a class BaseModel with various attributes"""
+
 import uuid
 from datetime import datetime
 from models import storage
