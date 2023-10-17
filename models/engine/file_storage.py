@@ -1,76 +1,53 @@
 #!/usr/bin/python3
-"""
-This program creates a simple flow of serialization/deserialization:
-Instance <-> Dictionary <-> JSON string <-> file
-Functions and classes:
-    class FileStorage:
-"""
+"""This module defines a class to manage file storage for hbnb clone"""
+import json
 
 
 class FileStorage:
-    """serializes instances to a JSON file
-    and deserializes JSON file to instances"""
-
-    __file_path = "file.json"
+    """This class manages storage of hbnb models in JSON format"""
+    __file_path = 'file.json'
     __objects = {}
 
     def all(self):
-        """return __objects"""
-
+        """Returns a dictionary of models currently in storage"""
         return FileStorage.__objects
 
     def new(self, obj):
-        """adds a new object to __objects dictionary"""
-
-        key = str(obj.__class__.__name__) + '.' + str(obj.id)
-        FileStorage.__objects[key] = obj
+        """Adds new object to storage dictionary"""
+        self.all().update({obj.to_dict()['__class__'] + '.' + obj.id: obj})
 
     def save(self):
-        """serializes __objects to the JSON file"""
-
-        from json import dump
-
-        file_name = FileStorage.__file_path
-
-        to_json = dict(FileStorage.__objects)
-        for k, v in to_json.items():
-            to_json[k] = v.to_dict()
-
-        with open(file_name, "w", encoding="UTF-8") as f:
-            dump(to_json, f)
+        """Saves storage dictionary to file"""
+        with open(FileStorage.__file_path, 'w') as f:
+            temp = {}
+            temp.update(FileStorage.__objects)
+            for key, val in temp.items():
+                temp[key] = val.to_dict()
+            json.dump(temp, f)
 
     def reload(self):
-        """deserializes the JSON file to __objects"""
-
-        from json import load
         from models.base_model import BaseModel
         from models.user import User
-        from models.amenity import Amenity
         from models.place import Place
-        from models.city import City
-        from models.review import Review
         from models.state import State
+        from models.city import City
+        from models.amenity import Amenity
+        from models.review import Review
 
-        file_name = FileStorage.__file_path
+        classes = {
+            'BaseModel': BaseModel,
+            'User': User,
+            'Place': Place,
+            'State': State,
+            'City': City,
+            'Amenity': Amenity,
+            'Review': Review
+        }
         try:
-            with open(file_name, "r", encoding="UTF-8") as f:
-                from_json = load(f)
-                for k, v in from_json.items():
-                    if 'BaseModel' in k:
-                        from_json[k] = BaseModel(**v)
-                    elif 'User' in k:
-                        from_json[k] = User(**v)
-                    elif 'State' in k:
-                        from_json[k] = State(**v)
-                    elif 'City' in k:
-                        from_json[k] = City(**v)
-                    elif 'Amenity' in k:
-                        from_json[k] = Amenity(**v)
-                    elif 'Place' in k:
-                        from_json[k] = Place(**v)
-                    elif 'Review' in k:
-                        from_json[k] = Review(**v)
-
-                FileStorage.__objects = dict(from_json)
+            temp = {}
+            with open(FileStorage.__file_path, 'r') as f:
+                temp = json.load(f)
+                for key, val in temp.items():
+                        self.all()[key] = classes[val['__class__']](**val)
         except FileNotFoundError:
-            return
+            pass
